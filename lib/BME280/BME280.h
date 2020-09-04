@@ -1,144 +1,149 @@
-/**
- ******************************************************************************
- * @file    BME280.h
- * @author  Toyomasa Watarai
- * @version V1.0.0
- * @date    11 March 2017
- * @brief   This file contains the class of a BME280 Combined humidity and pressure sensor library with I2C interface
- ******************************************************************************
- * @attention
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
- 
-/**
- *  Library for "BME280 temperature, humidity and pressure sensor module" from Switch Science
- *    https://www.switch-science.com/catalog/2236/
- *
- *  For more information about the BME280:
- *    http://ae-bst.resource.bosch.com/media/products/dokumente/bme280/BST-BME280_DS001-10.pdf
- */
- 
-#ifndef MBED_BME280_H
-#define MBED_BME280_H
-
+#ifndef _BME280_H_
+#define _BME280_H_
 #include "mbed.h"
-
-#define DEFAULT_SLAVE_ADDRESS (0x76 << 1)
-
-#ifdef _DEBUG
-extern Serial pc;
-#define DEBUG_PRINT(...) pc.printf(__VA_ARGS__)
-#else
-#define DEBUG_PRINT(...)
-#endif
-
-/**  Interface for controlling BME280 Combined humidity and pressure sensor
+ 
+typedef int32_t  BME280_S32_t ;
+typedef uint32_t BME280_U32_t ;
+typedef long long signed int BME280_S64_t ;
+ 
+#if 0
+#define BME280_U32_t uint32_t
+#define BME280_S32_t int32_t
+#define BME280_S64_t int64_t
+#endif 
+ 
+/**
+ * BME280 Environmental sensor
  *
- * @code
- * #include "mbed.h"
- * #include "BME280.h"
- * 
- * Serial pc(USBTX, USBRX);
- * 
- * #if defined(TARGET_LPC1768)
- * BME280 sensor(p28, p27);
- * #else
- * BME280 sensor(I2C_SDA, I2C_SCL);
- * #endif
- * 
- * int main() {
- *     
- *     while(1) {
- *         pc.printf("%2.2f degC, %04.2f hPa, %2.2f %%\n", sensor.getTemperature(), sensor.getPressure(), sensor.getHumidity());
- *         wait(1);
- *     }
- * }
- * 
- * @endcode
+ * @note Note: Interface selection is done by the value of CSB (chip select)
+ * @note if CSB is pulled-up, I2C interface is active.
+ * @note if CSB is pulled-down, SPI interface is active.
+ * @note After CSB has been pulled down once (regardless of whether any clock cycle occurred)
+ * @note the I2C interface is disabled until the next power-on-reset.
  */
-
-/** BME280 class
- *
- *  BME280: A library to correct environmental data using Boshe BME280 environmental sensor device
- *
- */ 
+ 
 class BME280
 {
 public:
-
-    /** Create a BME280 instance
-     *  which is connected to specified I2C pins with specified address
-     *
-     * @param sda I2C-bus SDA pin
-     * @param scl I2C-bus SCL pin
-     * @param slave_adr (option) I2C-bus address (default: 0x76)
-     */
-    BME280(PinName sda, PinName sck, char slave_adr = DEFAULT_SLAVE_ADDRESS);
-
-    /** Create a BME280 instance
-     *  which is connected to specified I2C pins with specified address
-     *
-     * @param i2c_obj I2C object (instance)
-     * @param slave_adr (option) I2C-bus address (default: 0x76)
-     */
-    BME280(I2C &i2c_obj, char slave_adr = DEFAULT_SLAVE_ADDRESS);
-
-    /** Destructor of BME280
-     */
-    virtual ~BME280();
-
-    /** Initializa BME280 sensor
-     *
-     *  Configure sensor setting and read parameters for calibration
-     *
-     */
-    void initialize(void);
-
-    /** Read the current temperature value (degree Celsius) from BME280 sensor
-     *
-     */
-    float getTemperature(void);
-
-    /** Read the current pressure value (hectopascal)from BME280 sensor
-     *
-     */
-    float getPressure(void);
-
-    /** Read the current humidity value (humidity %) from BME280 sensor
-     *
-     */
-    float getHumidity(void);
-
+ /**
+  * BME280 I2C Interface
+  *
+  * @param sda SDA pin
+  * @param scl SCL pin
+  * @param addr address of the I2C peripheral
+  */
+BME280(PinName sda, PinName scl, uint8_t addr) ;
+ 
+ /**
+  * BME280 SPI Interface
+  *
+  * @param sck  SPI SCKL pin
+  * @param miso SPI Master In Slave Out pin
+  * @param mosi SPI Master Out Slave In pin
+  * @param cs   SPI Chip Select pin
+  */
+BME280(PinName sck, PinName miso, PinName mosi, PinName cs) ;
+ 
+/**
+ * BME280 destructor
+ */
+~BME280() ;
+ 
+/** 
+ * software reset
+ *
+ * @param none
+ * @returns none
+ */
+void reset(void) ; 
+ 
+/**
+ * initialization
+ *
+ * @param none
+ * @reurns none
+ */
+void init(void) ;
+ 
+/**
+ * trigger for one-shot measure
+ *
+ * @param none
+ * @returns none
+ */
+void trigger(void) ; 
+ 
+/**
+ * check status register for the device activity
+ *
+ * @param none
+ * @returns uint8_t measuring (0x08) or in NVM udpate (0x01)
+ */
+uint8_t  busy(void) ;
+ 
+/**
+ * get device ID
+ *
+ * @param none
+ * @returns uint8_t ID for BME280 0x60
+ */
+uint8_t getID(void) ;
+ 
+/**
+ * get Temperature
+ *
+ * @param none
+ * @returns float temperature in degree Celsious
+ */
+float getTemperature(void) ;
+ 
+/**
+ * get Humidity
+ *
+ * @param none
+ * @returns float humidity in %
+ */
+float getHumidity(void) ;
+ 
+/**
+ * get Pressure
+ *
+ * @param none
+ * @returns float pressure in hPa
+ */
+float getPressure(void) ;
+ 
 private:
-
-    I2C         *i2c_p;
-    I2C         &i2c;
-    char        address;
-    uint16_t    dig_T1;
-    int16_t     dig_T2, dig_T3;
-    uint16_t    dig_P1;
-    int16_t     dig_P2, dig_P3, dig_P4, dig_P5, dig_P6, dig_P7, dig_P8, dig_P9;
-    uint16_t    dig_H1, dig_H3;
-    int16_t     dig_H2, dig_H4, dig_H5, dig_H6;
-    int32_t     t_fine;
-
-};
-
-#endif // MBED_BME280_H
+  SPI *m_spi ;
+  I2C *m_i2c ;
+  DigitalOut *m_cs ;
+  char m_addr ;
+  BME280_S32_t t_fine ;
+  
+  uint16_t dig_T1 ;
+  int16_t  dig_T2 ;
+  int16_t  dig_T3 ;
+  uint16_t dig_P1 ; 
+  int16_t  dig_P2 ;
+  int16_t  dig_P3 ; 
+  int16_t  dig_P4 ;
+  int16_t  dig_P5 ;
+  int16_t  dig_P6 ; 
+  int16_t  dig_P7 ;
+  int16_t  dig_P8 ;
+  int16_t  dig_P9 ;
+  uint8_t  dig_H1 ;
+  int16_t  dig_H2 ;
+  uint8_t  dig_H3 ;
+  int16_t  dig_H4 ;
+  int16_t  dig_H5 ; 
+  int8_t   dig_H6 ;
+ 
+  void i2c_readRegs(uint8_t addr, uint8_t *data, int len) ;
+  void i2c_writeRegs(uint8_t *data, int len) ;
+  void spi_readRegs(uint8_t addr, uint8_t *data, int len) ;
+  void spi_writeRegs(uint8_t *data, int len) ;
+  void readRegs(uint8_t addr, uint8_t *data, int len) ;
+  void writeRegs(uint8_t *data, int len) ;
+} ;
+#endif /* _BME280_H_ */
